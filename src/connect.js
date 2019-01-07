@@ -716,7 +716,7 @@ function TrezorConnect() {
     if (typeof address === 'string') {
       address = parseHDPath(address);
     }
-    console.log(address);
+    // console.log(address);
     manager.sendWithChannel(
       _fwStrFix(
         {
@@ -1048,8 +1048,8 @@ function PopupManager() {
   };
 
   this.sendWithChannel = function(message, callback) {
-    console.log(message);
-    console.log(callback);
+    // console.log(message);
+    // console.log(callback);
     message.bitcoreURLS = this.bitcoreURLS || null;
     message.accountDiscoveryLimit = this.accountDiscoveryLimit || null;
     message.accountDiscoveryGapLength = this.accountDiscoveryGapLength || null;

@@ -67,6 +67,7 @@ export function getAddress(trezor, kdPath) {
 
 export function signMessage(trezor, kdPath, txData) {
   return new Promise((resolve, reject) => {
+
     trezor.ethereumSignMessage(kdPath, txData, response => {
       if (response.success) {
         // address.value = response.address;
