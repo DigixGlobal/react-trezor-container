@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import HdKey from 'ethereumjs-wallet/hdkey';
 
-import TrezorConnect from './connect';
+// import TrezorConnect from './connect';
+
+import TrezorConnect from 'trezor-connect';
+
 import { DEFAULT_KD_PATH } from './constants';
 import {
   signTransaction,
@@ -23,25 +26,35 @@ export default class TrezorReactContainer extends Component {
     };
     this.handleSignTransaction = this.handleSignTransaction.bind(this);
     this.handleSignMessage = this.handleSignMessage.bind(this);
-    this.getTrezor = this.getTrezor.bind(this);
-    this.ethTrezor = this.getTrezor();
+    // this.getTrezor = this.getTrezor.bind(this);
+    this.ethTrezor = TrezorConnect;
   }
 
   componentWillMount() {
     const { wallet } = this.state.trezor;
     const { getAddresses } = this.props;
+    TrezorConnect.manifest({
+      email: 'rbanate@digixglobal.com',
+      appUrl: 'https://digix.global'
+    });
+
     if (!wallet && getAddresses) {
       this.getTrezorWallet();
     }
-    this.setState({ showAddresses: false, loading: false, error: undefined });
+    this.setState({
+      showAddresses: false,
+      loading: false,
+      error: undefined,
+      trezor: TrezorConnect
+    });
   }
 
-  getTrezor = () => new TrezorConnect();
+  // getTrezor = () => new TrezorConnect();
 
   getTrezorWallet = () => {
     this.getDefaultPubKey()
-      .then(result => {
-        const hdWallet = HdKey.fromExtendedKey(result.xpubkey);
+      .then(({ payload }) => {
+        const hdWallet = HdKey.fromExtendedKey(payload.xpub);
         this.setState({
           trezor: { hdWallet },
           showAddresses: true,
@@ -60,19 +73,10 @@ export default class TrezorReactContainer extends Component {
   getDefaultPubKey() {
     const { expect } = this.props || {};
     const { kdPath } = expect || {};
-    const ethTrezor = new TrezorConnect();
-    return new Promise((resolve, reject) => {
-      ethTrezor.getXPubKey(
-        kdPath || `${DEFAULT_KD_PATH}0`,
-        response => {
-          if (response.success) {
-            resolve(response);
-          } else {
-            reject(response.error);
-          }
-        },
-        '1.4.0'
-      ); // 1.4.0 is first firmware that supports ethereum
+
+    return TrezorConnect.getPublicKey({
+      path: kdPath || `${DEFAULT_KD_PATH}0`,
+      coin: 'eth'
     });
   }
 
@@ -100,13 +104,13 @@ export default class TrezorReactContainer extends Component {
   };
 
   handleSignTransaction(kdPath, txData) {
-    if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
-    return signTransaction(this.ethTrezor, kdPath, txData);
+    // if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
+    return signTransaction(TrezorConnect, kdPath, txData);
   }
 
   handleSignMessage(kdPath, txData) {
-    if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
-    return signMessage(this.ethTrezor, kdPath, txData);
+    // if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
+    return signMessage(TrezorConnect, kdPath, txData);
   }
 
   handleVerifyMessage(kdPath, txData) {
@@ -148,7 +152,7 @@ export default class TrezorReactContainer extends Component {
     const { renderReady, onReady } = this.props;
     if (renderReady) {
       onReady(this.getChildProps());
-      return this.props.renderReady(this.getChildProps());
+      return this.props.renderReady();
     }
     return <div>Ready to Sign...</div>;
   };
