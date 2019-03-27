@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import HdKey from 'ethereumjs-wallet/hdkey';
 
-import TrezorConnect from './connect';
+// import TrezorConnect from './connect';
+
+import TrezorConnect from 'trezor-connect';
+
 import { DEFAULT_KD_PATH } from './constants';
 import {
   signTransaction,
@@ -30,6 +33,11 @@ export default class TrezorReactContainer extends Component {
   componentWillMount() {
     const { wallet } = this.state.trezor;
     const { getAddresses } = this.props;
+    TrezorConnect.manifest({
+      email: 'rbanate@digixglobal.com',
+      appUrl: 'https://digix.global'
+    });
+
     if (!wallet && getAddresses) {
       this.getTrezorWallet();
     }
@@ -40,8 +48,8 @@ export default class TrezorReactContainer extends Component {
 
   getTrezorWallet = () => {
     this.getDefaultPubKey()
-      .then(result => {
-        const hdWallet = HdKey.fromExtendedKey(result.xpubkey);
+      .then(({ payload }) => {
+        const hdWallet = HdKey.fromExtendedKey(payload.xpub);
         this.setState({
           trezor: { hdWallet },
           showAddresses: true,
@@ -57,22 +65,31 @@ export default class TrezorReactContainer extends Component {
       });
   };
 
+  // getDefaultPubKey() {
+  //   const { expect } = this.props || {};
+  //   const { kdPath } = expect || {};
+  //   const ethTrezor = new TrezorConnect();
+  //   return new Promise((resolve, reject) => {
+  //     ethTrezor.getXPubKey(
+  //       kdPath || `${DEFAULT_KD_PATH}0`,
+  //       response => {
+  //         if (response.success) {
+  //           resolve(response);
+  //         } else {
+  //           reject(response.error);
+  //         }
+  //       },
+  //       '1.4.0'
+  //     ); // 1.4.0 is first firmware that supports ethereum
+  //   });
+  // }
   getDefaultPubKey() {
     const { expect } = this.props || {};
     const { kdPath } = expect || {};
-    const ethTrezor = new TrezorConnect();
-    return new Promise((resolve, reject) => {
-      ethTrezor.getXPubKey(
-        kdPath || `${DEFAULT_KD_PATH}0`,
-        response => {
-          if (response.success) {
-            resolve(response);
-          } else {
-            reject(response.error);
-          }
-        },
-        '1.4.0'
-      ); // 1.4.0 is first firmware that supports ethereum
+
+    return TrezorConnect.getPublicKey({
+      path: kdPath || `${DEFAULT_KD_PATH}0`,
+      coin: 'eth'
     });
   }
 
@@ -100,8 +117,8 @@ export default class TrezorReactContainer extends Component {
   };
 
   handleSignTransaction(kdPath, txData) {
-    if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
-    return signTransaction(this.ethTrezor, kdPath, txData);
+    // if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
+    return signTransaction(TrezorConnect, kdPath, txData);
   }
 
   handleSignMessage(kdPath, txData) {
