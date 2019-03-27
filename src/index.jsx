@@ -26,8 +26,8 @@ export default class TrezorReactContainer extends Component {
     };
     this.handleSignTransaction = this.handleSignTransaction.bind(this);
     this.handleSignMessage = this.handleSignMessage.bind(this);
-    this.getTrezor = this.getTrezor.bind(this);
-    this.ethTrezor = this.getTrezor();
+    // this.getTrezor = this.getTrezor.bind(this);
+    this.ethTrezor = TrezorConnect;
   }
 
   componentWillMount() {
@@ -41,10 +41,15 @@ export default class TrezorReactContainer extends Component {
     if (!wallet && getAddresses) {
       this.getTrezorWallet();
     }
-    this.setState({ showAddresses: false, loading: false, error: undefined });
+    this.setState({
+      showAddresses: false,
+      loading: false,
+      error: undefined,
+      trezor: TrezorConnect
+    });
   }
 
-  getTrezor = () => new TrezorConnect();
+  // getTrezor = () => new TrezorConnect();
 
   getTrezorWallet = () => {
     this.getDefaultPubKey()
@@ -65,24 +70,6 @@ export default class TrezorReactContainer extends Component {
       });
   };
 
-  // getDefaultPubKey() {
-  //   const { expect } = this.props || {};
-  //   const { kdPath } = expect || {};
-  //   const ethTrezor = new TrezorConnect();
-  //   return new Promise((resolve, reject) => {
-  //     ethTrezor.getXPubKey(
-  //       kdPath || `${DEFAULT_KD_PATH}0`,
-  //       response => {
-  //         if (response.success) {
-  //           resolve(response);
-  //         } else {
-  //           reject(response.error);
-  //         }
-  //       },
-  //       '1.4.0'
-  //     ); // 1.4.0 is first firmware that supports ethereum
-  //   });
-  // }
   getDefaultPubKey() {
     const { expect } = this.props || {};
     const { kdPath } = expect || {};
@@ -122,8 +109,8 @@ export default class TrezorReactContainer extends Component {
   }
 
   handleSignMessage(kdPath, txData) {
-    if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
-    return signMessage(this.ethTrezor, kdPath, txData);
+    // if (!this.ethTrezor) this.ethTrezor = this.getTrezor();
+    return signMessage(TrezorConnect, kdPath, txData);
   }
 
   handleVerifyMessage(kdPath, txData) {
