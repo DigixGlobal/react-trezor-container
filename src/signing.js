@@ -1,62 +1,118 @@
-import EthTx from 'ethereumjs-tx';
-import util, { addHexPrefix } from 'ethereumjs-util';
+'use strict';
 
-// import TrezorConnect from './connect';
-import { sanitizeAddress, hex } from './helpers';
+var TrezorConnect = require('trezor-connect').default;
+TrezorConnect.manifest({
+    email: 'vu@digix.global',
+    appUrl: 'https://community.digix.global'
+})
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.signTransaction = signTransaction;
+exports.getAddress = getAddress;
+exports.signMessage = signMessage;
+exports.verifyMessage = verifyMessage;
+
+var _ethereumjsTx = require('ethereumjs-tx');
+
+var _ethereumjsTx2 = _interopRequireDefault(_ethereumjsTx);
+
+var _ethereumjsUtil = require('ethereumjs-util');
+
+var _ethereumjsUtil2 = _interopRequireDefault(_ethereumjsUtil);
+
+var _helpers = require('./helpers');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 // import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
 
-export function signTransaction(trezor, kdPath, txData) {
-  const { to, nonce, gasPrice, value, gas, data } = txData;
+function signTransaction(trezor, kdPath, txData) {
+  var to = txData.to,
+      nonce = txData.nonce,
+      gasPrice = txData.gasPrice,
+      value = txData.value,
+      gas = txData.gas,
+      data = txData.data;
 
-  const sanitizedTxData = {
-    to: util.addHexPrefix(to),
-    nonce: util.addHexPrefix(nonce === '0x0' ? '00' : nonce),
-    gasPrice: util.addHexPrefix(gasPrice), // `0${util.stripHexPrefix(gasPrice)}`,
-    value: util.addHexPrefix(value),
-    data: data !== '' ? util.addHexPrefix(data) : null,
-    gasLimit: util.addHexPrefix(gas),
+
+  var sanitizedTxData = {
+    to: _ethereumjsUtil2.default.addHexPrefix(to),
+    nonce: _ethereumjsUtil2.default.addHexPrefix(nonce === '0x0' ? '00' : nonce),
+    gasPrice: _ethereumjsUtil2.default.addHexPrefix(gasPrice), // `0${util.stripHexPrefix(gasPrice)}`,
+    value: _ethereumjsUtil2.default.addHexPrefix(value),
+    data: data !== '' ? _ethereumjsUtil2.default.addHexPrefix(data) : null,
+    gasLimit: _ethereumjsUtil2.default.addHexPrefix(gas),
     chainId: txData.chainId || 1
   };
 
-  return new Promise((resolve, reject) => {
-    trezor.ethereumSignTx(
-      kdPath,
-      hex(util.stripHexPrefix(sanitizedTxData.nonce)),
-      hex(util.stripHexPrefix(sanitizedTxData.gasPrice)),
-      hex(util.stripHexPrefix(sanitizedTxData.gasLimit)),
-      util.stripHexPrefix(sanitizedTxData.to),
-      hex(util.stripHexPrefix(sanitizedTxData.value)),
-      util.stripHexPrefix(sanitizedTxData.data),
-      sanitizedTxData.chainId,
-      response => {
-        if (response.success) {
-          const tx = new EthTx(sanitizedTxData);
+  return new Promise(function (resolve, reject) {
 
-          tx.v = addHexPrefix(response.v);
-          tx.r = addHexPrefix(response.r);
-          tx.s = addHexPrefix(response.s);
-          // sanity check
-          const sender = tx.getSenderAddress().toString('hex');
-          // TrezorConnect.close();
-          if (
-            txData.from &&
-            sanitizeAddress(sender) !== sanitizeAddress(txData.from)
-          ) {
-            return reject('Signing address does not match sender');
-          }
-          // format the signed transaction for web3
-          const signedTx = addHexPrefix(tx.serialize().toString('hex'));
-          return resolve(signedTx);
+    TrezorConnect.ethereumSignTransaction({
+        path: kdPath,
+        transaction: {
+            to: sanitizedTxData.to,
+            value: sanitizedTxData.value,
+            data: sanitizedTxData.data,
+            chainId: sanitizedTxData.chainId,
+            nonce: sanitizedTxData.nonce,
+            gasLimit: sanitizedTxData.gasLimit,
+            gasPrice: sanitizedTxData.gasPrice
         }
-        return reject(response.error);
+    }).then(function(response) {
+      console.log('response = ', response);
+      if (response.success) {
+        var tx = new _ethereumjsTx2.default(sanitizedTxData);
+
+        tx.v = (0, _ethereumjsUtil.addHexPrefix)(response.payload.v);
+        tx.r = (0, _ethereumjsUtil.addHexPrefix)(response.payload.r);
+        tx.s = (0, _ethereumjsUtil.addHexPrefix)(response.payload.s);
+        // sanity check
+        var sender = tx.getSenderAddress().toString('hex');
+        // TrezorConnect.close();
+        if (txData.from && (0, _helpers.sanitizeAddress)(sender) !== (0, _helpers.sanitizeAddress)(txData.from)) {
+          console.log('hellopp');
+          console.log('txData', txData);
+          console.log('sender', sender);
+          return reject('Signing address does not match sender');
+        }
+        // format the signed transaction for web3
+        var signedTx = (0, _ethereumjsUtil.addHexPrefix)(tx.serialize().toString('hex'));
+        return resolve(signedTx);
       }
-    );
+      return reject(response.error);
+    });
+
+    // trezor.ethereumSignTx(kdPath, (0, _helpers.hex)(_ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.nonce)), (0, _helpers.hex)(_ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.gasPrice)), (0, _helpers.hex)(_ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.gasLimit)), _ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.to), (0, _helpers.hex)(_ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.value)), _ethereumjsUtil2.default.stripHexPrefix(sanitizedTxData.data), sanitizedTxData.chainId, function (response) {
+    //   if (response.success) {
+    //     var tx = new _ethereumjsTx2.default(sanitizedTxData);
+    //
+    //     tx.v = (0, _ethereumjsUtil.addHexPrefix)(response.v);
+    //     tx.r = (0, _ethereumjsUtil.addHexPrefix)(response.r);
+    //     tx.s = (0, _ethereumjsUtil.addHexPrefix)(response.s);
+    //     // sanity check
+    //     var sender = tx.getSenderAddress().toString('hex');
+    //     // TrezorConnect.close();
+    //     if (txData.from && (0, _helpers.sanitizeAddress)(sender) !== (0, _helpers.sanitizeAddress)(txData.from)) {
+    //       console.log('hellop');
+    //       console.log('txData', txData);
+    //       console.log('sender', sender);
+    //       return reject('Signing address does not match sender');
+    //     }
+    //     // format the signed transaction for web3
+    //     var signedTx = (0, _ethereumjsUtil.addHexPrefix)(tx.serialize().toString('hex'));
+    //     return resolve(signedTx);
+    //   }
+    //   return reject(response.error);
+    // });
   });
 }
 
-export function getAddress(trezor, kdPath) {
-  return new Promise((resolve, reject) => {
-    trezor.ethereumGetAddress(kdPath, response => {
+// import TrezorConnect from './connect';
+function getAddress(trezor, kdPath) {
+  return new Promise(function (resolve, reject) {
+    trezor.ethereumGetAddress(kdPath, function (response) {
       if (response.success) {
         return resolve(response);
       }
@@ -65,30 +121,40 @@ export function getAddress(trezor, kdPath) {
   });
 }
 
-export function signMessage(trezor, kdPath, txData) {
-  return new Promise((resolve, reject) => {
+function signMessage(trezor, kdPath, txData) {
+  return new Promise(function (resolve, reject) {
 
-    trezor.ethereumSignMessage(kdPath, txData, response => {
+    console.log('txData = ', txData);
+    TrezorConnect.ethereumSignMessage({
+        path: kdPath,
+        message: txData
+    }).then(function(response) {
+      console.log('response from trezor', response);
       if (response.success) {
-        // address.value = response.address;
-        // messageV.value = message.value;
-        // signature.value = response.signature;
-        const signature = addHexPrefix(response.signature);
+        var signature = (0, _ethereumjsUtil.addHexPrefix)(response.payload.signature);
         return resolve(signature);
       }
-      // address.value = '';
-      // messageV.value = '';
-      // signature.value = '';
-      return reject(response.error);
-    });
+      //TODO: handle any error ?
+      // return reject(response.error);
+    })
+    // trezor.ethereumSignMessage(kdPath, txData, function (response) {
+    //   if (response.success) {
+    //     // address.value = response.address;
+    //     // messageV.value = message.value;
+    //     // signature.value = response.signature;
+    //     var signature = (0, _ethereumjsUtil.addHexPrefix)(response.signature);
+    //     return resolve(signature);
+    //   }
+    //   // address.value = '';
+    //   // messageV.value = '';
+    //   // signature.value = '';
+    //   return reject(response.error);
+    // });
   });
 }
 
-export function verifyMessage(trezor, kdPath, txData) {
-  trezor.ethereumVerifyMessage(
-    kdPath,
-    txData.signature,
-    txData.Messsage,
-    response => response
-  );
+function verifyMessage(trezor, kdPath, txData) {
+  trezor.ethereumVerifyMessage(kdPath, txData.signature, txData.Messsage, function (response) {
+    return response;
+  });
 }
