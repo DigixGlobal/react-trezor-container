@@ -152,7 +152,7 @@ export default class TrezorReactContainer extends Component {
     const { renderReady, onReady } = this.props;
     if (renderReady) {
       onReady(this.getChildProps());
-      return this.props.renderReady(this.getChildProps());
+      return this.props.renderReady();
     }
     return <div>Ready to Sign...</div>;
   };
