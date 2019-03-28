@@ -157,16 +157,28 @@ export default class TrezorReactContainer extends Component {
     return <div>Ready to Sign...</div>;
   };
 
+  renderInitialSigning = () => {
+    const { renderInitSigning } = this.props;
+    if (renderInitSigning) {
+      return renderInitSigning(this.getChildProps());
+    }
+    return <div>Ready to Sign...</div>;
+  };
+
   render() {
     const { error, showAddresses, loading } = this.state;
-    const { signed, realoadPubKey } = this.props;
+    const { signing, signed, realoadPubKey, renderInitSigning } = this.props;
     if (loading) return this.renderLoading();
 
     if (realoadPubKey) return this.realoadPubKey();
 
     if (showAddresses) return this.renderAddresses();
 
-    if (!signed && this.props.renderReady) return this.renderSigningReady();
+    if (!signed && renderInitSigning && !signing)
+      return this.renderInitialSigning();
+
+    if (!signed && (this.props.renderReady || signing))
+      return this.renderSigningReady();
 
     if (error) return this.renderError();
 
@@ -180,10 +192,12 @@ TrezorReactContainer.propTypes = {
   renderLoading: PropTypes.func,
   renderError: PropTypes.func,
   onReady: PropTypes.func,
+  signing: PropTypes.bool,
   signed: PropTypes.bool,
   realoadPubKey: PropTypes.bool,
   onError: PropTypes.func,
   onSuccess: PropTypes.func,
+  renderInitSigning: PropTypes.func,
   expect: PropTypes.shape({
     kdPath: PropTypes.string,
     address: PropTypes.string
