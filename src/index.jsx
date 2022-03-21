@@ -34,7 +34,7 @@ export default class TrezorReactContainer extends Component {
     const { wallet } = this.state.trezor;
     const { getAddresses } = this.props;
     TrezorConnect.manifest({
-      email: 'rbanate@digixglobal.com',
+      email: 'francismurillo@digixglobal.com',
       appUrl: 'https://digix.global'
     });
 
